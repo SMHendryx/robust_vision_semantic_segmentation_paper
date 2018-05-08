@@ -8,8 +8,11 @@
 \usepackage{amssymb}
 
 % Include other packages here, before hyperref.
-%\usepackage{natbib}
+% https://www.imperial.ac.uk/media/imperial-college/administration-and-support-services/library/public/IEEE-style-for-latex.pdf
+\usepackage[numbers]{natbib}
 \usepackage{setspace}
+\usepackage{float}
+\usepackage [autostyle, english = american]{csquotes}
 % ^ Getting error: natbib  Bib not compatible with author-year citations
 
 % If you comment hyperref and then uncomment it, you should delete
@@ -63,27 +66,55 @@ Automated semantic image segmentation has many use cases in computer vision and
 machine learning with important applications in robotics and biomedical imaging.
 Accurate perception and object detection require fine resolution image segmentation.
 A more robust vision system would be able to perform semantic segmentation well across
-multiple domains without requiring building an entirely new architecture or retraining.
+multiple input domains without requiring building an entirely new architecture or retraining.
 
 
 %-------------------------------------------------------------------------
 \section{Related Work}
 
 \subsection{Transfer Learning}
-Transfer learning, multitask learning, and domain adaptation are tightly linked
-concepts that allow deep learning systems to generalize better and be developed more rapidly.
-Transfer learning broadly has been noted as "the next driver of [machine learning] success" after supervised learning by Andrew Ng in his NIPS 2016 keynote speech \cite{ng2016nips}. Learning from related tasks has a long history in machine learning beginning with \citet{thrun1996learning} and \citet{caruana1997multitask} \cite{donahue2014decaf}.
+Transfer learning broadly has been noted as "the next driver of [machine learning] success" after supervised learning by Andrew Ng in his NIPS 2016 keynote speech \cite{ng2016nips}.
+Learning from related tasks has a long history in machine learning beginning with \citet{thrun1996learning} and \citet{caruana1997multitask} \cite{donahue2014decaf}.
 Transfer learning is the process of exploiting what has been learned in one task by applying it to another task \cite[chap. 15]{goodfellow2016deep}, thereby allowing
 more rapid development of models for different tasks by applying what has been learned on one source task to a new target task. Domain adaptation is
-similar to transfer learning but has been defined as differing in that the task remains the same (or very similar) while
+similar to transfer learning but has been defined as differing in that the task remains the same while
 the distribution of the source input data is different from the distribution of the target input data \cite[chap. 15]{goodfellow2016deep}. Domain adaptation can
 be seen as a special case of multitask learning with one task in one domain and one task in another domain \cite{patel2015visual}. Given that these concepts overlap and that
-in the wild there will be many variations and combinations of new domain and new task, I will further use the term "transfer learning" to refer to any deep learning process that utilizes
-a previously learned representation.
+in the wild there will be many variations and combinations of new domain and new task, the author henceforth uses the term "transfer learning" to refer to any deep learning
+process that utilizes a previously learned representation.
+\citet{donahue2014decaf} address the problem of "semi-supervised multi-task learning of deep convolutional representations,
+where representations are learned on a set of related problems but applied to new tasks which have too few training examples to learn a full deep representation."
+They use both quantitative and qualitative (see Figure \ref{fig:decafClusters}) methods to show that the representation, when treated as a feature vector, learned in the deep layers of a CNN
+trained on the large ImageNet \cite{deng2009imagenet} database (following the methods of \citet{krizhevsky2012imagenet}) outperforms multiple classical visual representations
+on benchmark object recognition tasks.
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.75\linewidth]{figs/decafClusters.png}
+  \caption{Visualization of how features trained on
+  ImageNet \cite{deng2009imagenet} generalized to the SUN-397 scene recognition database \cite{xiao2010sun} by semantic groupings of labels (best viewed in color). Taken from \citet{donahue2014decaf}.}
+  \label{fig:decafClusters}
+  % to reference: \ref{buildingWLines}
+\end{figure}
+ While \citet{donahue2014decaf} use the deep representations learned in an image classification task, their findings suggest that similarly generalizable representations
+ may be learned in the deep layers of image segmentation neural networks. This hypothesis is supported by the foundational work of \citet{thrun1996learning}:
+  \enquote{By transferring knowledge across related learning tasks, a learner can become \enquote{more experienced} and generalize better.
+  ... It is consistently found that lifelong learning algorithms generalize significantly more accurately, particularly when training data is scarce.}
+  Further, \citet{girshick2014rich} find exactly this: highly generalizable representations are learned in deep CNNs trained on image classification that can be applied to
+  image segmentation. \citet{girshick2014rich} also train deep representations on ImageNet \cite{deng2009imagenet} mimicking the methods of \citet{krizhevsky2012imagenet}.
+  They then adapt the deep CNN to a new task and a new domain by changing only the final classification layer (to predict on the new task) and
+  continuing stochastic gradient descent (SGD) training of the CNN parameters at 1/10\textsuperscript{th} of the initial learning rate \cite{girshick2014rich}.
+
+  The image segmentation methods of \citet{girshick2014rich} are historically important but have since been surpassed by architectures such as Deeplab \cite{chen2018deeplab}.
+  But, the fine-tuning methods utilized by \citet{girshick2014rich} could potentially be applied in a similar fashion to adapting the representations learned by Deeplab
+  on large annotated datasets to new tasks and domains that may or may not have substantially large annotated datasets.
+
+  Specifically, the author asks here: can the representations learned by Deeplab be generalized to new classes and new domains by fine-tuning model weights?
 
 
 \subsection{Semantic Segmentation}
-Deep convolutional neural networks (CNNs) were first notably applied to whole image classification and the repeated convolutions, pooling layers, and final fully connected layer do not maintain spatial information necessary for segmentation \cite{marmanis2016semantic}.
+Deep convolutional neural networks (CNNs) were first notably applied to whole image classification and the repeated convolutions, pooling layers,
+and final fully connected layer do not maintain spatial information necessary for segmentation \cite{marmanis2016semantic}.
+
 Full convolutional neural networks (FCNNs) allow for semantic segmentation by learning to reverse the down-sampling with deconvolutional layers.
 % move to related works:
 Chen et al proposed a method \cite{chen2018deeplab} address this problem by proposing methods that improve the performance of
@@ -106,15 +137,30 @@ deep convolutional neural networks on fine semantic segmentation.
 \end{figure}
 
 \section{Data and Proposed Methods}
+The Robust Vision Challenge presents...
+
+In this work, we propose to test different methods on the Robust Vision semantic segmentation dataset with the goal of shedding light on how more domain-invariant
+image segmentation systems can be developed. With this motivation, the author proposes to ask three related research questions:
+\begin{enumerate}
+\item How well do the representations learned by Deeplab on the Cityscapes dataset generalize to the new classes in the Robust Vision dataset by fine-tuning model weights?
+\item Do segmentation ensembles fine-tuned from different initializations outperform single models in their ability to generalize across the diverse domains of the Robust Vision dataset?
+\begin{enumerate}
+  \item Such an ensemble could be composed of three Deeplab models initially trained on Cityscapes \cite{cordts2016cityscapes}, Pascal \cite{everingham2010pascal}, and ApolloScape \cite{huang2018apolloscape}, respectively, and then all
+  fine-tuned to the training set of the Robust Vision Challenge dataset.
+\end{enumerate}
+\item How does the recently proposed capsule network architecture \cite{sabour2017dynamic} performance compare to the above methods?
+\end{enumerate}
 
 \section{Preliminary Results}
+Deeplab xception architecture trained on Cityscapes does not generalize... See Figure x showing common Deeplab errors on a new dataset.
 
 %------------------------------------------------------------------------
 \section{Discussion and Future Work}
 
 If such an ensemble works, it could be used in a compression architecture to train a compressed, student network.
 {\small
-\bibliographystyle{ieee}
+%\bibliographystyle{ieee}
+\bibliographystyle{IEEEtranN}
 \bibliography{references}
 }
 
