@@ -25,13 +25,16 @@
 \def\cvprPaperID{****} % *** Enter the CVPR Paper ID here
 \def\httilde{\mbox{\tt\raisebox{-.5ex}{\symbol{126}}}}
 
+% Functions:
+\def\code#1{\texttt{#1}}
+
 % Pages are numbered in submission mode, and unnumbered in camera-ready
 %\ifcvprfinal\pagestyle{empty}\fi
 \setcounter{page}{1}
 \begin{document}
 
 %%%%%%%%% TITLE
-\title{Transfer Learning and Ensembles for Robust Segmentation}
+\title{Representation Learning for Robust Segmentation}
 
 \author{Sean M. Hendryx\\
 University of Arizona\\
@@ -56,7 +59,19 @@ Tucson, Arizona 85721\\
 
 %%%%%%%%% ABSTRACT
 \begin{abstract}
+  Automated semantic image segmentation is an important problem in computer vision and
+  machine learning with applications in robotics and biomedical imaging. A robust vision
+  system would be able to accurately segment images from multiple domains without building entirely new
+  architectures or retraining from random initializations. Transfer learning is the process of applying what has
+  been learned on one task to another task. In this research, the author investigates the role of transferring
+  knowledge across domains for semantic image segmentation. The author will apply transfer learning and ensemble models
+  to the Robust Vision Challenge semantic segmentation dataset.
+  Specifically, the author addresses the question: how well do the representations learned by deep neural network image segmentation systems
+  generalize to new classes and new domains by fine-tuning pre-trained model weights? Furthermore, the author
+  investigates the performance of ensembles of models fine-tuned from different previous training datasets.
+  The goal of this research is to shed light on how to develop representations for more domain-invariant vision systems.
 
+  %If knowledge can be effectively transferred across domains and tasks a system should have more generalizing power.
 \end{abstract}
 
 %%%%%%%%% BODY TEXT
@@ -67,6 +82,14 @@ machine learning with important applications in robotics and biomedical imaging.
 Accurate perception and object detection require fine resolution image segmentation.
 A more robust vision system would be able to perform semantic segmentation well across
 multiple input domains without requiring building an entirely new architecture or retraining.
+Transfer learning and model ensembling present synergistic pathways towards more robust vision systems.
+For example, it seems reasonable to believe that a solution to the problems of identifying a chair and identifying a person
+in many different poses, view angles, and lighting conditions would have many common components. These components
+could be as simple as finding the edges of the chair or the person in the image or as abstract as representing
+the three-dimensional object in a manner that is invariant to view angle. Common components should be transferrable
+between the two problems when, in fact, the two problems are subclasses of the superclass problem which is to segment the
+two dimensional image of the contiguous, three dimensional object. Further, by ensembling models that have learned different components
+of the more general solution, there is the potential to produce a more domain-invariant classifier.s
 
 
 %-------------------------------------------------------------------------
@@ -112,18 +135,52 @@ on benchmark object recognition tasks.
 
 
 \subsection{Semantic Segmentation}
-Deep convolutional neural networks (CNNs) were first notably applied to whole image classification and the repeated convolutions, pooling layers,
+Deep convolutional neural networks (CNNs) were first notably applied to whole image classification. The repeated convolutions, pooling layers,
 and final fully connected layer do not maintain spatial information necessary for segmentation \cite{marmanis2016semantic}.
+Fully convolutional neural networks (FCNNs) allow for semantic segmentation by learning to reverse the down-sampling with deconvolutional layers.
+\citet{chen2018deeplab} proposed methods to address this problem that significantly improved the performance of
+deep convolutional neural networks on fine semantic image segmentation over previous works.
 
-Full convolutional neural networks (FCNNs) allow for semantic segmentation by learning to reverse the down-sampling with deconvolutional layers.
-% move to related works:
-Chen et al proposed a method \cite{chen2018deeplab} address this problem by proposing methods that improve the performance of
-deep convolutional neural networks on fine semantic segmentation.
+The primary contributions of the \citet{chen2018deeplab} paper are:
+\begin{enumerate}
+  \item Highlighting the importance of convolution with upsampled filters (atrous convolution) for dense prediction.
+  \item Proposing atrous spatial pyramid pooling (ASPP) to segment objects at multiple scales.
+  \item Improving the localization of object boundaries by combining methods from deep convolutional neural networks (DCNNs)
+  and probabilistic graphical models (conditional random fields (CRFs), specifically).
+\end{enumerate}
+ The "algorithme \`a trous" (with holes) was originally developed in signal processing \cite{holschneider1990real} and \citet{chen2018deeplab} use
+the term "atrous convolution" to refer to convolution with upsampled filters (see Figure \ref{fig:atrousConv}).
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=.75\linewidth]{figs/atrous.png}
+  \caption{"Atrous convolution with kernel size $3\times3$ and different rates.
+  Standard convolution corresponds to atrous convolution with $rate = 1$.
+  Employing large value of atrous rate enlarges the model’s field-of-view, enabling object encoding at multiple scales." Taken from \citet{chen2017rethinking}.}
+  \label{fig:atrousConv}
+  % to reference: \ref{buildingWLines}
+\end{figure}
+
+Atrous convolution has the advantage of enlarging the field of view of the convolutional filters
+without increasing the number of parameters or the amount of computation \cite{chen2018deeplab}.
+Further, atrous spatial pyramid pooling captures objects and image context at multiple scales and can be implemented in parallel.
+Finally, \citet{chen2018deeplab} combine the recognition capacity of DCNN-based pixel-level classifiers with the
+fine-grained localization accuracy of fully connected CRF methods proposed by \cite{krahenbuhl2011efficient}.
+These methods produce accurate semantic segmentation at levels of detail beyond previous methods.
+
+While the methods proposed by \citet{chen2018deeplab} perform well when trained in a specific domain,
+it would be interesting and useful to understand how generalizable the
+learned representations are by testing them on a new dataset domain.
 
 \subsection{Ensembling}
-"Deep networks are notorious for hav- ing extremely non-convex, high-dimensional loss functions with many local minima.3 If one initialises with different (pre-trained, see next paragraph) sets of parameters, the net is therefore vir- tually guaranteed to converge to different solutions, even though it sees the same training data. This observation suggests a sim- ple model averaging (ensemble learning) procedure: train several networks with different initialisations, and average their predic- tions. Our results indicate that, as observed previously for image- level classification, e.g. [Simonyan and Zisserman, 2015], aver- aging multiple CNN instances further boosts performance." \cite{marmanis2016semantic}
+Deep neural networks have non-convex, high-dimensional loss functions with many local minima. As such, different initializations are likely to converge to
+different solutions. Therefore, often the best supervised learning models are ensembles of many simpler models \cite{marmanis2016semantic, buciluǎ2006model}.
+The effectiveness of ensembles over single models has been shown for the classification of vectors \cite{buciluǎ2006model} and imagery \cite{szegedy2015going} and for the segmentation of imagery \cite{marmanis2016semantic}.
+Further, \citet{buciluǎ2006model} and \citet{hinton2015distilling} have shown that the knowledge that has been learned by the ensemble of networks can be
+distilled (i.e. transferred) into a single, much simpler model that is more suitable for deployment when time and memory are a concern. This suggests
+that it would be possible to ensemble multiple models with different domain proficiencies and distill the knowledge into a single, simpler model.
 
-
+\iffalse
 \begin{figure}[t]
 \begin{center}
 \fbox{\rule{0pt}{2in} \rule{0.9\linewidth}{0pt}}
@@ -135,29 +192,90 @@ deep convolutional neural networks on fine semantic segmentation.
 \label{fig:long}
 \label{fig:onecol}
 \end{figure}
+\fi
 
-\section{Data and Proposed Methods}
-The Robust Vision Challenge presents...
+\section{Data and Proposed Methods} \label{Data and Proposed Methods}
+The Robust Vision Challenge measures performance across a number of challenging benchmark datasets with different characteristics.
+The goal of the challenge is to "foster the development of vision systems that are robust and consequently perform well on a variety of datasets with different characteristics" \cite{robustvisionchallenge2018}.
+Thus, it is a prime venue for testing the generalizability of segmentation algorithms and probing the representations that these algorithms learn.
+The Robust Vision semantic segmentation (RVSS) dataset contains 28,098 realistically sized images (over 2 million RGB pixels in a single image) of various dimensions. The number of images
+from each individual benchmark are shown in Table \ref{table:trainingDomainDist}. By concatenating the classes across all benchmarks in the RVSS dataset, there are 73 total classes that each pixel can take one value of.
 
-In this work, we propose to test different methods on the Robust Vision semantic segmentation dataset with the goal of shedding light on how more domain-invariant
-image segmentation systems can be developed. With this motivation, the author proposes to ask three related research questions:
+\begin{table}[t]
+\begin{center}
+  \begin{tabular}{|c|c|}
+    \hline
+      Benchmark Dataset & Number of Training Examples \\
+      \hline
+      ScanNet & 24353 \\
+      Cityscapes & 3475 \\
+      Kitti2015 & 200 \\
+      WildDash & 70 \\
+      \hline
+  \end{tabular}
+\end{center}
+\caption{Distribution of Robust Vision Challenge semantic segmentation dataset shown by number of training examples from each parent benchmark.}
+\label{table:trainingDomainDist}
+\end{table}
+
+In addition to the RVSS dataset, the author has also downloaded a fraction of ApolloScape, which is currently the world's largest
+the world's largest open-source dataset for autonomous driving \cite{huang2018apolloscape}.
+
+%{'Cityscapes': 3475, 'Kitti2015': 200, 'ScanNet': 24353, 'WildDash': 70}
+
+In this work, the author proposes to test different methods on the RVSS dataset with the goal of shedding light on
+how more domain-invariant image segmentation systems can be developed. With this motivation, the author proposes to ask three related research questions:
 \begin{enumerate}
 \item How well do the representations learned by Deeplab on the Cityscapes dataset generalize to the new classes in the Robust Vision dataset by fine-tuning model weights?
 \item Do segmentation ensembles fine-tuned from different initializations outperform single models in their ability to generalize across the diverse domains of the Robust Vision dataset?
 \begin{enumerate}
-  \item Such an ensemble could be composed of three Deeplab models initially trained on Cityscapes \cite{cordts2016cityscapes}, Pascal \cite{everingham2010pascal}, and ApolloScape \cite{huang2018apolloscape}, respectively, and then all
-  fine-tuned to the training set of the Robust Vision Challenge dataset.
+  \item There are infinite ways to ensemble DCNN models, but such an ensemble could be composed of, for example,
+  three Deeplab models initially trained on Cityscapes \cite{cordts2016cityscapes}, Pascal \cite{everingham2010pascal}, and ApolloScape \cite{huang2018apolloscape}, respectively,
+  and then all fine-tuned to the training set of the Robust Vision Challenge dataset. The performance on the validation data of each combination in the powerset could then be computed to find the best performing set.
 \end{enumerate}
-\item How does the recently proposed capsule network architecture \cite{sabour2017dynamic} performance compare to the above methods?
+\item Lastly, how does the recently proposed capsule network architecture \cite{sabour2017dynamic} performance compare to the above methods?
+\begin{enumerate}
+  \item The capsule network architecture was recently proposed by \citet{sabour2017dynamic} which is inspired by the representation of objects
+  in the brain which do not depend on view angle. \citet{sabour2017dynamic} also introduced the capsule network training algorithm, \textit{dynamic routing between capsules}.
+  \item Capsule networks were quickly extended to object segmentation by \citet{lalonde2018capsules}. Their network architecture is implemented in
+    Keras and TensorFlow and is available at \href{https://github.com/lalonderodney/SegCaps}{https://github.com/lalonderodney/SegCaps}.
+\end{enumerate}
 \end{enumerate}
 
 \section{Preliminary Results}
-Deeplab xception architecture trained on Cityscapes does not generalize... See Figure x showing common Deeplab errors on a new dataset.
+The author has tested the Deeplab xception architecture trained on the Cityscapes dataset on \enquote{in the wild} data that it was \textit{not} trained on and
+qualitatively evaluated performance. The \code{xception\_cityscapes\_trainfine} model checkpoint was downloaded from the official TensorFlow models github repository
+\href{https://github.com/tensorflow/models/blob/master/research/deeplab/g3doc/model_zoo.md}{here}
+The performance appears to be worse with a significant occurrence of large errors (see Figure \ref{fig:deepLabNotSeen}). The author adapted some of the high-level
+code for using Deeplab to infer the classes of an input image's pixels in order to run the code efficiently on a large number of images. The code can be seen here:
+\href{https://github.com/SMHendryx/models}{https://github.com/SMHendryx/models}
+
+\begin{figure}[t]
+\begin{center}
+  %\fbox{\rule{0pt}{2in} \rule{0.9\linewidth}{0pt}}
+   \includegraphics[width=0.8\linewidth]{figs/deeplab_on_unseen_data2.png}
+\end{center}
+   \caption{Example image from an entirely different dataset than the Cityscapes training set showing the class predictions from the Deeplab xception model.
+   The red overlay depicts predicted human class on areas in the input image that are not human.}
+\label{fig:deepLabNotSeen}
+\end{figure}
+
+
 
 %------------------------------------------------------------------------
 \section{Discussion and Future Work}
+The qualitative evaluations of the Deeplab xception architecture trained on Cityscapes show that learned representation has limited power to generalize
+to data that it has not seen during training. This problem is likely to be severely compounded when the architecture is applied to not only new domains of input data distributions
+but also to the new task of predicting the class of pixel from a larger number of classes. To mitigate such errors, the author proposes a number of logical steps listed in order in
+the research questions listed in section \ref{Data and Proposed Methods}. The first step is simply to add a new final layer to account for the new classes and fine-tune the Deeplab Cityscapes weights to the Robust Vision dataset.
+If we cannot declare victory, the author will proceed to research question 2 and evaluate the generalization performance of segmentation ensembles. If such an ensemble works, it could be used in a ensemble-teacher-student framework to train a compressed, simpler student network as done in \cite{buciluǎ2006model, hinton2015distilling}.
+If this does not produce satisfactory results, the author will then proceed to
+research question 3 and implement a capsule network for semantic segmentation and train the network from scratch.
 
-If such an ensemble works, it could be used in a compression architecture to train a compressed, student network.
+It is the author's hope that this research will contribute to the development of more robust and generalizable computer vision models for image segmentation. Furthermore, the research described here will help to shed light on how deep representations can more
+generally learn to perform the \textit{task} they are designed to perform and not only memorize slightly-perturbation-resistant abstractions of what they have seen before.
+
+
 {\small
 %\bibliographystyle{ieee}
 \bibliographystyle{IEEEtranN}
